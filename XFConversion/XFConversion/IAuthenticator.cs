@@ -13,6 +13,5 @@ namespace XFConversion
         Task<AuthenticationResult> Authenticate(string authority, string resource, string clientId, string returnUri);
         void Logout(string authority, string resource, string clientId);
 
-        //test3
     }
 }

@@ -20,6 +20,7 @@ namespace XFConversion.ViewModels
 
         private AuthenticationManager _authenticationManager;
         private bool _showErrorMessage;
+        private bool _showResponseMessage;
         private string _errorMessage;
 
         #endregion
@@ -29,6 +30,11 @@ namespace XFConversion.ViewModels
         public bool ShowErrorMessage {
             get { return _showErrorMessage; }
             set { _showErrorMessage = value; OnPropertyChanged(); }
+        }
+
+        public bool ShowResponseMessage {
+            get { return _showResponseMessage; }
+            set { _showResponseMessage = value; OnPropertyChanged(); }
         }
 
         public string ErrorMessage {
@@ -95,16 +101,17 @@ namespace XFConversion.ViewModels
 
         public ICommand LoginCommand { get; private set; }
         public ICommand LogoutCommand { get; private set; }
-        public ICommand QueryAPICommand { get; private set; }
+        public ICommand QueryApiCommand { get; private set; }
+
         public MainViewModel()
         {
             LoginCommand = new Command(async () => await LoginAsync());
             LogoutCommand = new Command(LogoutAsync);
-            QueryAPICommand = new Command(async () => await QueryApiAsync());
+            QueryApiCommand = new Command(async () => await QueryApiAsync());
         }
         public void Load()
         {
-            AuthenticationManager.SetConfiguration(Configuration.Authority, Configuration.Resource, Configuration.ClientId, Configuration.RedirectUri);
+            AuthenticationManager.SetConfiguration();
             _authenticationManager = new AuthenticationManager();
         }
 
@@ -113,7 +120,7 @@ namespace XFConversion.ViewModels
             ResetErrorMessage();
             await _authenticationManager.LoginAsync();
 
-            var user = AuthenticationManager.UserInfo;
+            var user = _authenticationManager.UserInfo;
             IsConnected = true;
             FirstName = user.GivenName;
             LastName = user.FamilyName;
@@ -134,20 +141,24 @@ namespace XFConversion.ViewModels
 
         private void ResetErrorMessage()
         {
-            ErrorMessage = null;
+            ErrorMessage = "";
             ShowErrorMessage = false;
+            ApiResponse = "";
+            ShowResponseMessage = false;
         }
         public async Task QueryApiAsync()
         {
             ResetErrorMessage();
             var httpClient = _authenticationManager.CreateHttpClient();
-            var response = await httpClient.GetAsync(new Uri("values", UriKind.Relative));
+            
+            var response = await httpClient.GetAsync(new Uri(Configuration.ApiUri));
 
 
             if (response.IsSuccessStatusCode)
             {
                 var value = await response.Content.ReadAsStringAsync();
                 ApiResponse = value;
+                ShowResponseMessage = true;
             }
             else
             {
